@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AppHeader from "@/components/AppHeader";
+import ApproveButton from "./ApproveButton";
 
 const PIPELINE = ["DRAFT", "UPLOADED", "ARRANGING", "PROOFING", "APPROVED", "PRINTED", "SHIPPED"] as const;
 
@@ -24,6 +25,12 @@ export default async function OperatorHome() {
     );
   }
 
+  const { data: requests } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .eq("operator_requested", true)
+    .eq("role", "customer");
+
   const { data: jobs } = await supabase
     .from("jobs")
     .select("id, title, status, wall_width_mm, wall_height_mm, updated_at, user_id, profiles!inner(email)")
@@ -37,6 +44,19 @@ export default async function OperatorHome() {
     <div className="min-h-screen bg-stone-50">
       <AppHeader />
       <main className="max-w-7xl mx-auto p-6">
+        {requests && requests.length > 0 && (
+          <div className="mb-6 bg-white border border-amber-200 rounded-xl p-4">
+            <h2 className="font-bold text-stone-900 mb-3">Operator access requests ({requests.length})</h2>
+            <div className="space-y-2">
+              {requests.map((r) => (
+                <div key={r.id} className="flex items-center justify-between text-sm">
+                  <span className="text-stone-700">{r.email}</span>
+                  <ApproveButton userId={r.id} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <h1 className="text-2xl font-bold text-stone-900 mb-4">Pipeline</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {PIPELINE.map((s) => (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppHeader from "@/components/AppHeader";
+import RequestOperatorButton from "./RequestOperatorButton";
 
 export default async function CustomerHomePage() {
   const supabase = await createClient();
@@ -9,6 +10,12 @@ export default async function CustomerHomePage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/customer");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("operator_requested")
+    .eq("id", user.id)
+    .single();
 
   const { data: jobs } = await supabase
     .from("jobs")
@@ -28,6 +35,9 @@ export default async function CustomerHomePage() {
           >
             + New job
           </Link>
+        </div>
+        <div className="mb-6">
+          <RequestOperatorButton requested={!!profile?.operator_requested} />
         </div>
         {(!jobs || jobs.length === 0) ? (
           <div className="bg-white border border-stone-200 rounded-2xl p-12 text-center">
